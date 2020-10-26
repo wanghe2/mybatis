@@ -1,0 +1,274 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace:指定为哪个接口提供配置 --> 
+<mapper namespace="com.wang.dao.UserDao">
+
+	<resultMap id="userinfoMap" type="com.wang.bean.User">
+		<id property="id" column="id" />
+		<result property="username" column="username" />
+	    <result property="type" column="type" />
+	    <result property="createtime" column="createtime" />
+	    <result property="password" column="password" />
+ 		<result property="passwords" column="passwords" />
+ 		<result property="password1" column="password1" />
+	    <!-- association ：配置一对一属性 -->
+	    <!-- property:order里面的User属性名 -->
+	    <!-- javaType:属性类型 -->
+	    <association property="userInfo" javaType="userInfo"> <!--userInfo对象映射，想要拿到哪些属性值就要在下面写出来-->
+	        <!-- id:声明主键，表示user_id是关联查询对象的唯一标识-->
+	        <id property="id" column="id" />
+	        <result property="personName" column="person_name" />
+	        <result property="gender" column="gender" />
+	        <result property="phone" column="phone" />
+	         <result property="email" column="email" />
+	        <result property="userUnit" column="user_unit" />
+	        <result property="adminUnit" column="admin_unit" />
+	        <result property="remark" column="address" />
+    	</association>
+	</resultMap>
+	
+	<resultMap id="userRoleMap" type="com.wang.bean.User">
+		<id property="id" column="user_id" />
+		<result property="username" column="username" />
+	    <association property="userInfo" javaType="userInfo"> <!--userInfo对象映射，想要拿到哪些属性值就要在下面写出来-->
+	        <id property="id" column="id" />
+	        <result property="personName" column="person_name" />
+    	</association>
+    	<collection property="roles" ofType="com.wang.bean.Role">
+   		 	<id property="id" column="role_id" />
+	        <result property="rolename" column="name" />
+    		<result property="detail" column="detail" />
+    	</collection>
+	</resultMap>
+
+	<select id="queryAll" resultMap="userinfoMap">
+		select a.*, b.* from t_user a left join t_user_info b on a.id = b.id where 1=1
+	</select>
+	
+	
+	<!-- 一对一和一对多，使用的联合查询 ，所有数据一块查出来（下面还要一种嵌套查询，可以参照一下） -->
+	<select id="getUserAndRoles" resultMap="userRoleMap">
+		select a.id user_id,a.username, b.*, d.id role_id,d.name,d.detail
+		  from t_user a
+		  left join t_user_info b on a.id = b.id
+		  left join t_user_role c on a.id = c.user_id
+		  left join t_role d on c.role_id = d.id
+		 where a.username = #{username}
+	</select>
+	
+	
+	<!-- 以下是mybatis常用的 范例语句 -->
+	<!-- 以下是mybatis常用的 范例语句 -->
+	<!-- 以下是mybatis常用的 范例语句 -->
+	
+	<!-- trim标签 -->
+	<insert id="insert" parameterType="Object">
+        insert into student   
+        <trim     prefix="("    suffix=")"    suffixOverrides="," >    
+	    	<if test="name != null  "> NAME,  </if>    
+	    </trim>   
+	    
+	    <trim     prefix="values("    suffix=")"    suffixOverrides="," >
+	   		<if test="name != null  ">  #{name},  </if>    
+	    </trim>
+	</insert>
+	
+	<!-- foreach标签 -->
+	<select id="countByUserList" resultType="_int" parameterType="list">
+		select count(*) from users
+	  <where>
+	    id in
+	    <foreach item="item" collection="list" separator="," open="(" close=")" index="">
+	      #{item.id, jdbcType=NUMERIC}
+	    </foreach>
+	  </where>
+	</select>
+	
+	<delete id="deleteByPrimaryKey" parameterType="Object">
+        delete from student where id=#{id}
+	</delete>
+	
+	<update id="updateUser" parameterType="Object">
+        update T_USER set student   
+        <trim     prefix="("    suffix=")"    suffixOverrides="," >    
+	    	<if test="name != null  "> NAME,  </if>    
+	    </trim>   
+	    
+	    <trim     prefix="values("    suffix=")"    suffixOverrides="," >
+	   		<if test="name != null  ">  #{name},  </if>    
+	    </trim>
+	</insert>
+	
+	<!-- choose标签  -->
+	<select id="getStudentListChoose" parameterType="Student" resultMap="BaseResultMap">     
+    	SELECT * from STUDENT WHERE 1=1    
+	    <where>     
+	        <choose>     
+	            <when test="Name!=null and student!='' ">     
+	                   AND name LIKE CONCAT(CONCAT('%', #{student}),'%')      
+	            </when>     
+	            <when test="hobby!= null and hobby!= '' ">     
+	                    AND hobby = #{hobby}      
+	            </when>                   
+	            <otherwise>     
+	                    AND AGE = 15  
+	            </otherwise>     
+	        </choose>     
+	    </where>     
+	</select>   
+	
+	<!-- where标签  （配合if使用）-->
+	<select id="getStudentListWhere" parameterType="Object" resultMap="BaseResultMap">     
+	    SELECT * from STUDENT      
+	       <where>   
+	         <if test="name!=null and name!='' ">     
+	            NAME LIKE CONCAT(CONCAT('%', #{name}),'%')      
+	         </if>     
+	         <if test="hobby!= null and hobby!= '' ">     
+	            AND hobby = #{hobby}      
+	         </if>  
+	       </where>        
+	</select>    
+	
+	<!-- update标签 -->
+	<update id="updateStudent" parameterType="Object">     
+	    UPDATE STUDENT      
+	    <set>     
+	        <if test="name!=null and name!='' ">     
+	            NAME = #{name},      
+	        </if>     
+	        <if test="hobby!=null and hobby!='' ">     
+	            MAJOR = #{major},      
+	        </if> 
+	        <if test="hobby!=null and hobby!='' ">     
+	            HOBBY = #{hobby}    
+	        </if>     
+	    </set>     
+	    WHERE ID = #{id};      
+	</update>  
+	
+	
+	 <!-- 查询字段 -->
+    <sql id="Base_Column_List">
+        ID,MAJOR,BIRTHDAY,AGE,NAME,HOBBY
+    </sql>
+
+ <!-- 查询条件 -->
+    <sql id="Example_Where_Clause">
+        where 1=1
+        <trim suffixOverrides=","> 
+            <if test="id != null and id !=''">
+                and id = #{id}
+            </if>
+            <if test="major != null and major != ''">
+                and MAJOR = #{major}
+            </if>
+            <if test="birthday != null ">
+                and BIRTHDAY = #{birthday}
+            </if>
+            <if test="age != null ">
+                and AGE = #{age}
+            </if>
+            <if test="name != null and name != ''">
+                and NAME = #{name}
+            </if>
+            <if test="hobby != null and hobby != ''">
+                and HOBBY = #{hobby}
+            </if>            
+            <if test="sorting != null">
+                order by #{sorting}
+            </if>
+            <if test="sort!= null  and sort != '' ">
+                order by ${sort}   ${order}
+            </if>
+
+        </trim>
+    </sql>
+    
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM
+        student
+        <include refid="Example_Where_Clause" />
+    </select>
+    
+    
+    <!-- 分页查询 -->
+    <select id="select" resultMap="BaseResultMap">
+    
+    
+        select * from (
+            select tt.*,rownum as rowno from 
+                (
+                    SELECT
+                    <include refid="Base_Column_List" /> 
+                    FROM
+                    student
+                    <include refid="Example_Where_Clause" />
+                     ) tt 
+                     <where>
+                            <if test="pageNum != null and rows != null">
+                            and  rownum  <![CDATA[<=]]>#{page}*#{rows}
+                         </if>
+                    </where>
+             ) table_alias
+            where table_alias.rowno>#{pageNum}
+              
+              
+    </select>
+	
+	
+	<!-- 如果name和hobby的值都不为空的话，会忽略最后一个“，” ； -->
+	<update id="updateByPrimaryKey" parameterType="Object">
+        update student set 
+	  <trim  suffixOverrides="," > 
+	    <if test="name != null  ">
+	        NAME=#{name},
+	    </if>
+	    <if test="hobby != null  ">
+	        HOBBY=#{hobby},
+	    </if>
+	  </trim> where id=#{id}
+    </update>
+    
+    <!-- 如果name和hobby的值都不为空的话，会为<trim>片段添加 "WHERE" 前缀，并忽略第一个 “and”   -->
+    <select id="selectByNameOrHobby" resultMap="BaseResultMap">
+		select * from student 
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+		    <if test="name != null and name.length()>0"> AND name=#{name}
+		    </if>
+		    <if test="hobby != null and hobby.length()>0"> AND hobby=#{hobby}
+		    </if>
+		</trim>
+	</select>
+    
+    
+    
+    
+	<!-- 一对一和一对多的关联查询，这里使用的是嵌套查询  -->
+    <resultMap type="Phone" id="selectPhomap">
+        <id property="id" column="id"/>
+        <result property="phoneNum" column="phoneNum"/>
+        <collection property="persons" ofType="Person" select="selectPer" column="id">
+            <id property="id" column="id"/>
+            <result property="username" column="username"/>
+            <result property="password" column="password"/>
+            <result property="gender" column="gender"/>
+            <result property="age" column="age"/>
+            <result property="phoneID" column="phoneID"/>
+        </collection>
+    </resultMap>
+    <select id="select" parameterType="int" resultMap="selectPhomap">
+        select * from tbl_phone where id=#{id}
+    </select>
+    <select id="selectPer" parameterType="int" resultType="Person">
+        select * from tbl_person where phoneID=#{phoneID}
+    </select>
+
+    <select id="findPageUsers" resultType="User"> 
+            select id,name,gender from t_user 
+     </select> 
+    
+</mapper>
